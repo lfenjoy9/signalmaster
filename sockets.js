@@ -1,22 +1,26 @@
 var socketIO = require('socket.io'),
-    uuid = require('node-uuid'),
+    uuid = require('node-uuid'), // https://github.com/broofa/node-uuid
     crypto = require('crypto');
 
-module.exports = function (server, config) {
+module.exports = function (server, config) { 
+    // create a socket.io bind to server
     var io = socketIO.listen(server);
 
     io.sockets.on('connection', function (client) {
+        // the resources session variable
         client.resources = {
             screen: false,
             video: true,
             audio: false
         };
+        console.log("id: ", client.id, "resources: ", client.resources);
 
         // pass a message to another id
+        // details {to: rooms, from: ...}
         client.on('message', function (details) {
             if (!details) return;
 
-            var otherClient = io.to(details.to);
+            var otherClient = io.to(details.to); // room
             if (!otherClient) return;
 
             details.from = client.id;
@@ -59,6 +63,7 @@ module.exports = function (server, config) {
             // leave any existing rooms
             removeFeed();
             safeCb(cb)(null, describeRoom(name));
+            // join the room
             client.join(name);
             client.room = name;
         }
@@ -73,6 +78,7 @@ module.exports = function (server, config) {
         });
 
         client.on('create', function (name, cb) {
+            console.log("create room:", name, "arguments length:", arguments.length);
             if (arguments.length == 2) {
                 cb = (typeof cb == 'function') ? cb : function () {};
                 name = name || uuid();
@@ -83,9 +89,11 @@ module.exports = function (server, config) {
             // check if exists
             var room = io.nsps['/'].adapter.rooms[name];
             if (room && room.length) {
+                console.log(room, " taken!");
                 safeCb(cb)('taken');
             } else {
                 join(name);
+                console.log("joined ", name);
                 safeCb(cb)(null, name);
             }
         });
@@ -123,25 +131,28 @@ module.exports = function (server, config) {
         client.emit('turnservers', credentials);
     });
 
-
     function describeRoom(name) {
         var adapter = io.nsps['/'].adapter;
         var clients = adapter.rooms[name] || {};
+        console.log("clients: ", clients);
         var result = {
             clients: {}
         };
         Object.keys(clients).forEach(function (id) {
             result.clients[id] = adapter.nsp.connected[id].resources;
         });
+        console.log("room description: ", result);
         return result;
     }
 
     function clientsInRoom(name) {
+        // Get clients in a room
         return io.sockets.clients(name).length;
     }
 
 };
 
+// Returns a no-op callaback if the passing callback is not a function.
 function safeCb(cb) {
     if (typeof cb === 'function') {
         return cb;

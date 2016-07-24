@@ -1,14 +1,25 @@
 /*global console*/
-var yetify = require('yetify'),
+var yetify = require('yetify'), // for yet logo
     config = require('getconfig'),
     fs = require('fs'),
     sockets = require('./sockets'),
     port = parseInt(process.env.PORT || config.server.port, 10),
     server_handler = function (req, res) {
-        res.writeHead(404);
-        res.end();
+        // res.writeHead(404);
+        // res.end();
+        fs.readFile(__dirname + '/index.html',
+            function (err, data) {
+                if (err) {
+                    res.writeHead(500);
+                    return res.end('Error loading index.html');
+                }
+                res.writeHead(200);
+                res.end(data);
+            });
     },
     server = null;
+
+var fs = require('fs');
 
 // Create an http(s) server instance to that socket.io can listen to
 if (config.server.secure) {
@@ -24,7 +35,10 @@ server.listen(port);
 
 sockets(server, config);
 
-if (config.uid) process.setuid(config.uid);
+if (config.uid) {
+    console.log("uid: ", config.uid);
+    process.setuid(config.uid);
+}
 
 var httpUrl;
 if (config.server.secure) {

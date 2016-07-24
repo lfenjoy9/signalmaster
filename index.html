@@ -1,0 +1,81 @@
+<html>
+<body>
+    Signaling Test
+    <div>
+        test
+    </div>
+    <div>
+        <input type="button" value="create room" onclick="create('test')">
+    </div>
+    <div>
+        <input type="button" value="join room" onclick="join('test')">
+    </div>
+    <div>
+        <input type="button" value="leave room" onclick="leave('test')">
+    </div>
+    <div>
+        <input type="button" value="share screen" onclick="shareScreen()">
+    </div>
+    <div>
+        <input type="button" value="unshare screen" onclick="unshareScreen()">
+    </div>
+    <div>
+        <input type="button" value="send message" onclick="sendMessage('hello socket.io')">
+    </div>
+</body>
+
+</html>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io('http://localhost:8888');
+    socket.on('stunservers', function(urls) {
+        console.log("stunservers:", urls);
+    });
+
+    socket.on('turnservers', function(credentials) {
+        console.log("credentials:", credentials);
+    });
+
+    socket.on('message', function(message) {
+        console.log("message:", message);
+    });
+
+    function create(room) {
+        console.log("create", room);
+        socket.emit("create", room, function(err, roomDescription) {
+            if (err) {
+                console.log("err:", err);
+            } else {
+                console.log("room description:", roomDescription);
+            }
+        });
+    }
+
+    function join(room) {
+        console.log("join", room);
+        socket.emit("join", room, function(err, roomDescription) {
+            if (err) {
+                console.log("err:", err);
+            } else {
+                console.log("room description:", roomDescription);
+            }
+        });
+    }
+
+    function leave(room) {
+        socket.emit("leave");
+    }
+
+    function shareScreen() {
+        socket.emit("shareScreen");
+    }
+
+    function unshareScreen() {
+        socket.emit("unshareScreen");
+    }
+
+    function sendMessage(payload) {
+        var message = {to: "test", from: "", payload: payload};
+        socket.emit("message", message);
+    }
+</script>
